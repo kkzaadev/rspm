@@ -1,5 +1,13 @@
 [advisories]
 version = 2
+ignore = [
+    # `paste` is archived/unmaintained but still pulled in transitively by
+    # `boa_engine` (via `boa_string`). There is no safe upgrade until upstream
+    # `boa_engine` migrates to `pastey` or removes the dependency. Tracked at
+    # https://github.com/boa-dev/boa — re-evaluate when boa cuts a release
+    # that drops `paste`.
+    "RUSTSEC-2024-0436",
+]
 
 [licenses]
 version = 2
@@ -7,6 +15,9 @@ allow = [
     "Apache-2.0",
     "BSD-2-Clause",
     "BSD-3-Clause",
+    # `notify` v6.x uses CC0-1.0 for some of its transitive helpers; CC0 is
+    # OSI-approved public-domain-equivalent and compatible with MIT.
+    "CC0-1.0",
     "ISC",
     "MIT",
     "Unicode-3.0",
@@ -14,6 +25,10 @@ allow = [
 ]
 
 [bans]
+# Boa + notify + sysinfo each pull in slightly different transitive versions
+# (hashbrown 0.14/0.15/0.16/0.17, windows-sys, winnow). Downgrading to a
+# single version requires coordinated upstream upgrades; warn for visibility
+# but don't fail the gate.
 multiple-versions = "warn"
 wildcards = "allow"
 

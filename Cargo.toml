@@ -16,6 +16,7 @@ members = [
     "crates/rspm-deploy",
     "crates/rspm-dashboard",
     "crates/rspm-http",
+    "tests",
 ]
 resolver = "2"
 

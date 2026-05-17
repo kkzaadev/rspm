@@ -187,7 +187,7 @@ pub struct AppConfig {
     /// Equivalent to PM2 `exp_backoff_restart_delay`. When `None`, the
     /// daemon falls back to [`AppConfig::restart_delay_ms`] without any
     /// backoff escalation. Subsequent restarts multiply the previous delay
-    /// by 1.5x capped at [`rspm_core::defaults::EXP_BACKOFF_CAP_MS`].
+    /// by 1.5x capped at [`crate::defaults::EXP_BACKOFF_CAP_MS`].
     #[serde(default)]
     pub exp_backoff_restart_delay_ms: Option<u64>,
     /// Exit codes that are considered intentional. When a child exits with

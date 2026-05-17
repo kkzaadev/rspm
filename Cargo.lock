@@ -1446,6 +1446,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "rspm-tests"
+version = "0.0.1"
+dependencies = [
+ "chrono",
+ "nix",
+ "rspm-config",
+ "rspm-core",
+ "rspm-daemon",
+ "rspm-ipc",
+ "rspm-logs",
+ "rspm-protocol",
+ "serde_json",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "rspm-watcher"
 version = "0.0.1"
 dependencies = [
