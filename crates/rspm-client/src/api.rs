@@ -1,8 +1,10 @@
 //! Typed client API.
 
-use rspm_core::types::{AppConfig, ProcessInfo};
+use std::collections::BTreeMap;
+
+use rspm_core::types::{AppConfig, ProcessId, ProcessInfo};
 use rspm_core::{Result, RspmError};
-use rspm_protocol::{Request, Response, Selector};
+use rspm_protocol::{ProcessDetail, Request, Response, Selector};
 
 use crate::client::RspmClient;
 
@@ -102,6 +104,57 @@ impl RspmClient {
     /// Kills the daemon.
     pub async fn kill_daemon(&mut self) -> Result<String> {
         match self.call(Request::KillDaemon).await? {
+            Response::Ack { message } => Ok(message),
+            other => Err(unexpected(other)),
+        }
+    }
+
+    /// Returns detailed metadata for matching processes (`rspm describe <id>`).
+    pub async fn describe(&mut self, selector: Selector) -> Result<Vec<ProcessDetail>> {
+        match self.call(Request::Describe { selector }).await? {
+            Response::Describe { details } => Ok(details),
+            other => Err(unexpected(other)),
+        }
+    }
+
+    /// Returns effective env per process (`rspm env <id>`).
+    pub async fn env_for(
+        &mut self,
+        selector: Selector,
+    ) -> Result<BTreeMap<ProcessId, BTreeMap<String, String>>> {
+        match self.call(Request::Env { selector }).await? {
+            Response::Env { envs } => Ok(envs),
+            other => Err(unexpected(other)),
+        }
+    }
+
+    /// Resizes a cluster-mode app to `instances` (`rspm scale <name> <n>`).
+    pub async fn scale(&mut self, name: String, instances: u32) -> Result<Vec<ProcessInfo>> {
+        match self.call(Request::Scale { name, instances }).await? {
+            Response::ProcessList { processes } => Ok(processes),
+            other => Err(unexpected(other)),
+        }
+    }
+
+    /// Truncates log files for matching processes (`rspm flush`).
+    pub async fn flush(&mut self, selector: Option<Selector>) -> Result<String> {
+        match self.call(Request::Flush { selector }).await? {
+            Response::Ack { message } => Ok(message),
+            other => Err(unexpected(other)),
+        }
+    }
+
+    /// Zeroes restart counters (`rspm reset <id>`).
+    pub async fn reset(&mut self, selector: Selector) -> Result<Vec<ProcessInfo>> {
+        match self.call(Request::Reset { selector }).await? {
+            Response::ProcessList { processes } => Ok(processes),
+            other => Err(unexpected(other)),
+        }
+    }
+
+    /// Reopens log file descriptors (`rspm reloadLogs`).
+    pub async fn reload_logs(&mut self) -> Result<String> {
+        match self.call(Request::ReloadLogs).await? {
             Response::Ack { message } => Ok(message),
             other => Err(unexpected(other)),
         }

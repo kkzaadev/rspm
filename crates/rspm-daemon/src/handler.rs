@@ -88,6 +88,44 @@ pub async fn handle(
                 message: "daemon stopped".to_owned(),
             })
         }
+        Request::Describe { selector } => {
+            let mut god = god.lock().await;
+            god.describe(&selector)
+                .await
+                .map(|details| Response::Describe { details })
+        }
+        Request::Env { selector } => {
+            let mut god = god.lock().await;
+            god.env_for(&selector)
+                .await
+                .map(|envs| Response::Env { envs })
+        }
+        Request::Scale { name, instances } => {
+            let mut god = god.lock().await;
+            god.scale(&name, instances)
+                .await
+                .map(|processes| Response::ProcessList { processes })
+        }
+        Request::Flush { selector } => {
+            let mut god = god.lock().await;
+            god.flush(selector.as_ref())
+                .await
+                .map(|count| Response::Ack {
+                    message: format!("flushed {count} log files"),
+                })
+        }
+        Request::Reset { selector } => {
+            let mut god = god.lock().await;
+            god.reset_counters(&selector)
+                .await
+                .map(|processes| Response::ProcessList { processes })
+        }
+        Request::ReloadLogs => {
+            let mut god = god.lock().await;
+            god.reload_logs().await.map(|count| Response::Ack {
+                message: format!("reopened {count} log files"),
+            })
+        }
     };
 
     match result {

@@ -320,8 +320,29 @@ cargo test --workspace
 Catatan: beberapa test daemon, socket, dan process supervision lebih akurat
 dijalankan dari terminal normal, bukan sandbox terbatas.
 
+## Benchmark
+
+RSPM punya script benchmark manual di `benchmarks/`.
+
+Benchmark RSPM saja:
+
+```bash
+./benchmarks/benchmark-rspm.sh
+```
+
+Compare RSPM dengan PM2:
+
+```bash
+./benchmarks/compare-rspm-pm2.sh
+```
+
+Script compare membutuhkan PM2 yang sudah terinstall. Output CSV mentah ditulis
+ke `target/benchmarks/`.
+
 ## Dokumen Terkait
 
+- `CHANGELOG.md` - catatan perubahan project
+- `benchmarks/README.md` - script benchmark dan workflow compare PM2
 - `prd.md` - requirement dan rencana parity PM2
 - `docs/architecture.md` - arsitektur crate dan daemon
 - `docs/protocol.md` - format IPC

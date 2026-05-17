@@ -8,5 +8,5 @@ pub mod version;
 
 pub use event::{Event, LogStream};
 pub use request::{Request, Selector};
-pub use response::Response;
+pub use response::{ProcessDetail, Response};
 pub use version::PROTOCOL_VERSION;

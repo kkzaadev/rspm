@@ -1286,7 +1286,7 @@ dependencies = [
 
 [[package]]
 name = "rspm-cli"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "clap",
@@ -1305,7 +1305,7 @@ dependencies = [
 
 [[package]]
 name = "rspm-client"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "rspm-core",
  "rspm-ipc",
@@ -1316,7 +1316,7 @@ dependencies = [
 
 [[package]]
 name = "rspm-cluster"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "nix",
  "rspm-core",
@@ -1325,7 +1325,7 @@ dependencies = [
 
 [[package]]
 name = "rspm-config"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "boa_engine",
  "rspm-core",
@@ -1337,7 +1337,7 @@ dependencies = [
 
 [[package]]
 name = "rspm-core"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "chrono",
  "serde",
@@ -1349,7 +1349,7 @@ dependencies = [
 
 [[package]]
 name = "rspm-daemon"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "chrono",
  "cron",
@@ -1369,28 +1369,28 @@ dependencies = [
 
 [[package]]
 name = "rspm-dashboard"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "rspm-core",
 ]
 
 [[package]]
 name = "rspm-deploy"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "rspm-core",
 ]
 
 [[package]]
 name = "rspm-http"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "rspm-core",
 ]
 
 [[package]]
 name = "rspm-ipc"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "chrono",
  "futures-util",
@@ -1402,7 +1402,7 @@ dependencies = [
 
 [[package]]
 name = "rspm-logs"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "chrono",
  "rspm-core",
@@ -1413,14 +1413,14 @@ dependencies = [
 
 [[package]]
 name = "rspm-modules"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "rspm-core",
 ]
 
 [[package]]
 name = "rspm-monitor"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "chrono",
  "rspm-core",
@@ -1429,7 +1429,7 @@ dependencies = [
 
 [[package]]
 name = "rspm-protocol"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "chrono",
  "rspm-core",
@@ -1440,14 +1440,14 @@ dependencies = [
 
 [[package]]
 name = "rspm-startup"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "rspm-core",
 ]
 
 [[package]]
 name = "rspm-tests"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "chrono",
  "nix",
@@ -1464,7 +1464,7 @@ dependencies = [
 
 [[package]]
 name = "rspm-watcher"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "globset",
  "notify",

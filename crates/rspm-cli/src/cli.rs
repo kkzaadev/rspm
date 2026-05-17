@@ -57,6 +57,24 @@ pub enum Commands {
     Kill,
     /// Send a signal to a process by id, name, or all.
     SendSignal(SignalArgs),
+    /// Show detailed information for a process.
+    #[command(alias = "show", alias = "info")]
+    Describe(TargetArgs),
+    /// Print the pm_id(s) matching a name.
+    Id(TargetArgs),
+    /// Print the OS pid(s) of matching processes.
+    Pid(OptionalTargetArgs),
+    /// Print the effective env of a process.
+    Env(TargetArgs),
+    /// Truncate log files for one process or all.
+    Flush(OptionalTargetArgs),
+    /// Reset restart counters for a process.
+    Reset(TargetArgs),
+    /// Reopen log file descriptors (logrotate hook).
+    #[command(name = "reloadLogs", alias = "reload-logs")]
+    ReloadLogs,
+    /// Resize a cluster-mode app to N instances.
+    Scale(ScaleArgs),
 }
 
 /// `start` command arguments.
@@ -89,6 +107,23 @@ pub struct StartArgs {
 pub struct TargetArgs {
     /// Process id, name, or all.
     pub target: String,
+}
+
+/// Optional target command arguments. Used by commands where omitting the
+/// target means "all", e.g. `rspm flush` and `rspm pid`.
+#[derive(Debug, Args)]
+pub struct OptionalTargetArgs {
+    /// Process id, name, or all. Defaults to all when omitted.
+    pub target: Option<String>,
+}
+
+/// `scale` command arguments.
+#[derive(Debug, Args)]
+pub struct ScaleArgs {
+    /// App name to resize.
+    pub name: String,
+    /// New instance count.
+    pub instances: u32,
 }
 
 /// Logs command arguments.

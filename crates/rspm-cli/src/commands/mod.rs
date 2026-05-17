@@ -1,11 +1,19 @@
 //! CLI command dispatch.
 
+pub mod describe;
+pub mod env;
+pub mod flush;
+pub mod id;
 pub mod kill;
 pub mod list;
 pub mod logs;
+pub mod pid;
 pub mod ping;
+pub mod reload_logs;
+pub mod reset;
 pub mod resurrect;
 pub mod save;
+pub mod scale;
 pub mod send_signal;
 pub mod start;
 pub mod startup;
@@ -34,5 +42,13 @@ pub async fn run(command: Commands, client: &mut RspmClient) -> Result<()> {
         Commands::Ping => ping::run(client).await,
         Commands::Kill => kill::run(client).await,
         Commands::SendSignal(args) => send_signal::run(args, client).await,
+        Commands::Describe(args) => describe::run(args, client).await,
+        Commands::Id(args) => id::run(args, client).await,
+        Commands::Pid(args) => pid::run(args, client).await,
+        Commands::Env(args) => env::run(args, client).await,
+        Commands::Flush(args) => flush::run(args, client).await,
+        Commands::Reset(args) => reset::run(args, client).await,
+        Commands::ReloadLogs => reload_logs::run(client).await,
+        Commands::Scale(args) => scale::run(args, client).await,
     }
 }

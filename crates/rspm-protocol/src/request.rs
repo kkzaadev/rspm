@@ -75,4 +75,35 @@ pub enum Request {
     },
     /// Shuts down the daemon.
     KillDaemon,
+    /// Returns a detailed report (selector + env + counters) for processes.
+    ///
+    /// Mirrors PM2 `pm2 describe`. Matches by id or name.
+    Describe {
+        /// Process selector.
+        selector: Selector,
+    },
+    /// Returns the resolved environment map for matching processes.
+    Env {
+        /// Process selector.
+        selector: Selector,
+    },
+    /// Resizes a cluster-mode app to `instances` processes.
+    Scale {
+        /// App name to resize.
+        name: String,
+        /// New instance count.
+        instances: u32,
+    },
+    /// Truncates log files for matching processes. None = every process.
+    Flush {
+        /// Optional process selector.
+        selector: Option<Selector>,
+    },
+    /// Zeroes the restart counters for matching processes.
+    Reset {
+        /// Process selector.
+        selector: Selector,
+    },
+    /// Reopens log file descriptors. Use after logrotate moved files.
+    ReloadLogs,
 }

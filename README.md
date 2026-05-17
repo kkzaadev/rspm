@@ -320,8 +320,29 @@ cargo test --workspace
 Some daemon, socket, and process supervision behavior is more accurate from a
 normal terminal than from a restricted sandbox.
 
+## Benchmarks
+
+RSPM includes manual benchmark scripts under `benchmarks/`.
+
+Run the RSPM-only benchmark:
+
+```bash
+./benchmarks/benchmark-rspm.sh
+```
+
+Compare RSPM with PM2:
+
+```bash
+./benchmarks/compare-rspm-pm2.sh
+```
+
+The comparison script requires PM2 to be installed separately. Raw CSV output is
+written to `target/benchmarks/`.
+
 ## Related Docs
 
+- `CHANGELOG.md` - notable project changes
+- `benchmarks/README.md` - benchmark scripts and PM2 comparison workflow
 - `prd.md` - requirements and PM2 parity plan
 - `docs/architecture.md` - crate and daemon architecture
 - `docs/protocol.md` - IPC format

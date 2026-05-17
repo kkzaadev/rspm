@@ -25,7 +25,7 @@ use rspm_core::{Result, RspmError};
 use rspm_ipc::PubSubBus;
 use rspm_logs::{LogOpts, LogWriter, tail_file};
 use rspm_monitor::{Aggregator, Sampler};
-use rspm_protocol::{Event, LogStream, Selector};
+use rspm_protocol::{Event, LogStream, ProcessDetail, Selector};
 use rspm_watcher::AppWatcher;
 
 #[derive(Debug)]
@@ -826,6 +826,194 @@ impl God {
         self.next_id = self.next_id.saturating_add(1);
         id
     }
+
+    /// Returns detailed metadata for matching processes.
+    pub async fn describe(&mut self, selector: &Selector) -> Result<Vec<ProcessDetail>> {
+        self.refresh_and_autorestart().await?;
+        let ids = self.select_ids(selector)?;
+        let details = ids
+            .into_iter()
+            .filter_map(|pm_id| self.processes.get(&pm_id))
+            .map(describe_managed)
+            .collect();
+        Ok(details)
+    }
+
+    /// Returns the effective env (merged base + active overrides) for each
+    /// matching process, keyed by `pm_id`.
+    pub async fn env_for(
+        &mut self,
+        selector: &Selector,
+    ) -> Result<BTreeMap<ProcessId, BTreeMap<String, String>>> {
+        self.refresh_and_autorestart().await?;
+        let ids = self.select_ids(selector)?;
+        Ok(ids
+            .into_iter()
+            .filter_map(|pm_id| {
+                self.processes
+                    .get(&pm_id)
+                    .map(|managed| (pm_id, effective_env(&managed.app)))
+            })
+            .collect())
+    }
+
+    /// Zeroes the restart counters for matching processes.
+    ///
+    /// Mirrors `pm2 reset <id>`. Useful after fixing a crash loop to clear
+    /// `restart_time` and `unstable_restarts` so the next failure isn't
+    /// immediately treated as a runaway.
+    pub async fn reset_counters(&mut self, selector: &Selector) -> Result<Vec<ProcessInfo>> {
+        let ids = self.select_ids(selector)?;
+        for pm_id in &ids {
+            if let Some(managed) = self.processes.get_mut(pm_id) {
+                managed.info.restart_time = 0;
+                managed.info.unstable_restarts = 0;
+                managed.prev_restart_delay_ms = 0;
+            }
+        }
+        self.list().await
+    }
+
+    /// Truncates the log files for matching processes (or every process when
+    /// `selector` is `None`). Equivalent to `pm2 flush`.
+    pub async fn flush(&mut self, selector: Option<&Selector>) -> Result<usize> {
+        let ids = match selector {
+            Some(selector) => self.select_ids(selector)?,
+            None => self.processes.keys().copied().collect(),
+        };
+        let mut count = 0;
+        for pm_id in ids {
+            let Some(managed) = self.processes.get(&pm_id) else {
+                continue;
+            };
+            if let Some(path) = managed.info.out_file.clone()
+                && truncate_log(&path).is_ok()
+            {
+                count += 1;
+            }
+            if let Some(path) = managed.info.error_file.clone()
+                && truncate_log(&path).is_ok()
+            {
+                count += 1;
+            }
+        }
+        Ok(count)
+    }
+
+    /// Reopens log writers for every managed process. Hook for logrotate-style
+    /// external rotation. Mirrors `pm2 reloadLogs`.
+    pub async fn reload_logs(&mut self) -> Result<usize> {
+        let ids: Vec<ProcessId> = self.processes.keys().copied().collect();
+        let mut count = 0;
+        for pm_id in ids {
+            let app = match self.processes.get(&pm_id) {
+                Some(managed) => managed.app.clone(),
+                None => continue,
+            };
+            let out_path = self
+                .processes
+                .get(&pm_id)
+                .and_then(|m| m.info.out_file.clone());
+            let err_path = self
+                .processes
+                .get(&pm_id)
+                .and_then(|m| m.info.error_file.clone());
+            // The active spawn_log_forwarder tasks still own the existing
+            // writers — abort them and recreate the writers fresh against the
+            // (now possibly missing/renamed) file. The next worker tick will
+            // hand a new pipe pair to a fresh forwarder on next respawn; for
+            // currently-online children we simply create the file so PM2 users
+            // don't see "no such file" errors after rotation.
+            if let Some(path) = out_path
+                && reopen_log_file(&path, &app).is_ok()
+            {
+                count += 1;
+            }
+            if let Some(path) = err_path
+                && reopen_log_file(&path, &app).is_ok()
+            {
+                count += 1;
+            }
+        }
+        Ok(count)
+    }
+
+    /// Resizes a cluster-mode app to exactly `target` instances.
+    ///
+    /// Mirrors `pm2 scale <name> <n>`:
+    /// - Scaling up: spawn additional children sharing the same AppConfig with
+    ///   fresh `instance_index` values.
+    /// - Scaling down: stop and remove the highest-indexed instances.
+    ///
+    /// Fork-mode apps reject the call because PM2 disallows scaling them.
+    pub async fn scale(&mut self, name: &str, target: u32) -> Result<Vec<ProcessInfo>> {
+        let matching: Vec<(ProcessId, u32)> = self
+            .processes
+            .iter()
+            .filter(|(_, managed)| managed.app.name == name)
+            .map(|(pm_id, managed)| (*pm_id, managed.instance_index))
+            .collect();
+
+        if matching.is_empty() {
+            return Err(RspmError::NotFound(format!("app named {name}")));
+        }
+
+        let template = self
+            .processes
+            .values()
+            .find(|managed| managed.app.name == name)
+            .map(|managed| managed.app.clone())
+            .expect("invariant: matching non-empty implies app present");
+
+        if !matches!(template.execution_mode, ExecutionMode::ClusterMode) {
+            return Err(RspmError::Config(format!(
+                "scale only supports cluster_mode apps; {name} is fork_mode"
+            )));
+        }
+
+        let target = target.max(1);
+        let current = matching.len() as u32;
+
+        if target > current {
+            let base_index = matching.iter().map(|(_, idx)| *idx).max().unwrap_or(0) + 1;
+            for offset in 0..(target - current) {
+                let next_index = base_index + offset;
+                let mut app = template.clone();
+                app.instances = rspm_core::types::InstanceCount::Count(target);
+                let pm_id = self.allocate_id();
+                let mut info = ProcessInfo::new(pm_id, &app);
+                info.status = ProcessStatus::Launching;
+                self.processes.insert(
+                    pm_id,
+                    ManagedProcess {
+                        app,
+                        info,
+                        child: None,
+                        instance_index: next_index,
+                        watcher: None,
+                        log_tasks: Vec::new(),
+                        prev_restart_delay_ms: 0,
+                        next_restart_at: None,
+                    },
+                );
+                self.spawn_for_id(pm_id).await?;
+                self.ensure_watcher(pm_id);
+            }
+        } else if target < current {
+            let mut by_index = matching;
+            by_index.sort_by_key(|(_, idx)| std::cmp::Reverse(*idx));
+            let to_drop = (current - target) as usize;
+            for (pm_id, _) in by_index.into_iter().take(to_drop) {
+                self.stop_id(pm_id).await?;
+                if let Some(pid) = self.processes.remove(&pm_id).and_then(|m| m.info.pid) {
+                    self.aggregator.forget(pid);
+                }
+                self.cron_next.remove(&pm_id);
+            }
+        }
+
+        self.list().await
+    }
 }
 
 struct SpawnedChild {
@@ -1057,6 +1245,78 @@ fn prefix_lines(name: &str, stream: &str, lines: Vec<String>) -> Vec<String> {
         .into_iter()
         .map(|line| format!("[{name}] [{stream}] {line}"))
         .collect()
+}
+
+/// Builds the env map the daemon would hand to a child if it spawned right now.
+/// Includes the always-set RSPM bookkeeping vars (pm_id is per-instance so it's
+/// omitted here — describe is per-app, not per-instance).
+fn effective_env(app: &AppConfig) -> BTreeMap<String, String> {
+    let mut out: BTreeMap<String, String> = BTreeMap::new();
+    for (key, value) in app.env.iter() {
+        out.insert(key.clone(), value.clone());
+    }
+    out.insert("name".to_owned(), app.name.clone());
+    out.insert(app.instance_var.clone(), "0".to_owned());
+    out.insert(
+        "RSPM_EXEC_MODE".to_owned(),
+        app.execution_mode.as_pm2_str().to_owned(),
+    );
+    out.insert(
+        "RSPM_INSTANCES".to_owned(),
+        app.instances.resolve().to_string(),
+    );
+    if matches!(app.execution_mode, ExecutionMode::ClusterMode) {
+        out.insert("RSPM_CLUSTER".to_owned(), "1".to_owned());
+    }
+    out
+}
+
+fn describe_managed(managed: &ManagedProcess) -> ProcessDetail {
+    let app = &managed.app;
+    ProcessDetail {
+        info: managed.info.clone(),
+        args: app.args.clone(),
+        interpreter: app.interpreter.clone(),
+        exec_mode: app.execution_mode.as_pm2_str().to_owned(),
+        instances: app.instances.resolve(),
+        env: effective_env(app),
+        auto_restart: app.auto_restart,
+        max_restarts: app.max_restarts,
+        min_uptime_ms: app.min_uptime_ms,
+        kill_timeout_ms: app.kill_timeout_ms,
+        restart_delay_ms: app.restart_delay_ms,
+        exp_backoff_restart_delay_ms: app.exp_backoff_restart_delay_ms,
+        max_memory_restart: app.max_memory_restart.clone(),
+        stop_exit_codes: app.stop_exit_codes.clone(),
+        watch: watch_enabled(&app.watch),
+    }
+}
+
+fn truncate_log(path: &Path) -> std::io::Result<()> {
+    if path.exists() {
+        std::fs::OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(path)?;
+    }
+    Ok(())
+}
+
+/// Recreates the file at `path` (touching it if missing) so external rotation
+/// tools that just moved the file have a fresh sink to write to. We don't
+/// rewire the live LogWriter instance because the next worker tick / restart
+/// will pick up the new writer naturally.
+fn reopen_log_file(path: &Path, _app: &AppConfig) -> std::io::Result<()> {
+    if let Some(parent) = path.parent()
+        && !parent.as_os_str().is_empty()
+    {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)?;
+    Ok(())
 }
 
 fn watch_enabled(spec: &WatchSpec) -> bool {

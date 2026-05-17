@@ -1,0 +1,32 @@
+{
+  "name": "rspm",
+  "version": "0.0.2",
+  "description": "Rust Process Manager — PM2 functional parity, written in Rust.",
+  "keywords": ["pm2", "process-manager", "rust", "daemon", "supervisor"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kkzaadev/rspm.git"
+  },
+  "homepage": "https://github.com/kkzaadev/rspm",
+  "bugs": {
+    "url": "https://github.com/kkzaadev/rspm/issues"
+  },
+  "bin": {
+    "rspm": "bin/rspm.js"
+  },
+  "scripts": {
+    "postinstall": "node ./scripts/install.js",
+    "test": "node ./bin/rspm.js --version"
+  },
+  "files": [
+    "bin/",
+    "scripts/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "os": ["linux"],
+  "cpu": ["x64", "arm64"]
+}
