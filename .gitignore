@@ -1,0 +1,9 @@
+/target/
+/.rspm/
+/.rspm-*/
+*.log
+*.pid
+/.claude/
+/.vscode/
+/.agents/
+/pm2/

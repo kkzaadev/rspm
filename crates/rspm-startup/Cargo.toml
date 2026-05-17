@@ -1,0 +1,13 @@
+[package]
+name = "rspm-startup"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+rspm-core = { path = "../rspm-core" }
+
+[lints]
+workspace = true
+

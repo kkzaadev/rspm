@@ -1,0 +1,19 @@
+[package]
+name = "rspm-logs"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+chrono.workspace = true
+rspm-core = { path = "../rspm-core" }
+tokio.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile = "3.14"
+
+[lints]
+workspace = true
+

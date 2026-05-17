@@ -1,0 +1,18 @@
+[package]
+name = "rspm-config"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+boa_engine.workspace = true
+rspm-core = { path = "../rspm-core" }
+serde.workspace = true
+serde_json.workspace = true
+serde_yaml.workspace = true
+toml.workspace = true
+
+[lints]
+workspace = true
+

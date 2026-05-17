@@ -1,0 +1,32 @@
+[package]
+name = "rspm-daemon"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+chrono.workspace = true
+cron.workspace = true
+nix.workspace = true
+rspm-core = { path = "../rspm-core" }
+rspm-ipc = { path = "../rspm-ipc" }
+rspm-logs = { path = "../rspm-logs" }
+rspm-monitor = { path = "../rspm-monitor" }
+rspm-protocol = { path = "../rspm-protocol" }
+rspm-watcher = { path = "../rspm-watcher" }
+serde_json.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+tempfile = "3.14"
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "rspm-daemon"
+path = "src/main.rs"
+

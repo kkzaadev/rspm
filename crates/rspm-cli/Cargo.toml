@@ -1,0 +1,32 @@
+[package]
+name = "rspm-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+rspm-client = { path = "../rspm-client" }
+rspm-config = { path = "../rspm-config" }
+rspm-core = { path = "../rspm-core" }
+rspm-daemon = { path = "../rspm-daemon" }
+rspm-protocol = { path = "../rspm-protocol" }
+rspm-startup = { path = "../rspm-startup" }
+nix = { workspace = true, features = ["user"] }
+serde_json.workspace = true
+tokio.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+tempfile = "3.14"
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "rspm"
+path = "src/main.rs"
+

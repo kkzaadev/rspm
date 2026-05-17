@@ -1,0 +1,50 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build release binary
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --release --workspace --bin rspm --bin rspm-daemon
+      - name: Compute checksums
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp target/release/rspm dist/
+          cp target/release/rspm-daemon dist/
+          cd dist
+          sha256sum rspm rspm-daemon > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rspm-linux-x86_64
+          path: dist/
+
+  release:
+    name: Create GitHub release
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: rspm-linux-x86_64
+          path: dist/
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/rspm
+            dist/rspm-daemon
+            dist/SHA256SUMS
+          generate_release_notes: true

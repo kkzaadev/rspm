@@ -1,0 +1,53 @@
+[workspace]
+members = [
+    "crates/rspm-core",
+    "crates/rspm-protocol",
+    "crates/rspm-config",
+    "crates/rspm-ipc",
+    "crates/rspm-daemon",
+    "crates/rspm-client",
+    "crates/rspm-cli",
+    "crates/rspm-watcher",
+    "crates/rspm-monitor",
+    "crates/rspm-logs",
+    "crates/rspm-cluster",
+    "crates/rspm-modules",
+    "crates/rspm-startup",
+    "crates/rspm-deploy",
+    "crates/rspm-dashboard",
+    "crates/rspm-http",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.95.0"
+license = "MIT"
+repository = "https://github.com/rspm/rspm"
+authors = ["RSPM contributors"]
+
+[workspace.dependencies]
+anyhow = "1.0.100"
+boa_engine = "0.20.0"
+chrono = { version = "0.4.42", features = ["serde", "clock"] }
+clap = { version = "4.5.53", features = ["derive"] }
+cron = "0.15"
+futures-util = "0.3.31"
+globset = "0.4.16"
+nix = { version = "0.30.1", features = ["signal", "process", "socket"] }
+notify = "6"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+serde_yaml = "0.9.34"
+socket2 = { version = "0.5", features = ["all"] }
+sysinfo = { version = "0.32", default-features = false, features = ["system"] }
+thiserror = "2.0.17"
+tokio = { version = "1.48.0", features = ["fs", "io-util", "macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
+toml = "0.9.8"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.20", features = ["env-filter", "fmt"] }
+
+[workspace.lints.clippy]
+unwrap_used = "deny"
+panic = "deny"

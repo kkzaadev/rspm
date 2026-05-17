@@ -1,0 +1,6 @@
+[[apps]]
+name = "rspm-example"
+script = "examples/long-running.sh"
+args = []
+autorestart = true
+

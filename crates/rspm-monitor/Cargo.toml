@@ -1,0 +1,14 @@
+[package]
+name = "rspm-monitor"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+chrono.workspace = true
+rspm-core = { path = "../rspm-core" }
+sysinfo.workspace = true
+
+[lints]
+workspace = true
