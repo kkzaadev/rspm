@@ -6,15 +6,19 @@
 //   - RSPM_SKIP_DOWNLOAD=1 is set (CI / monorepo dev installs)
 //   - the binary already exists (re-install)
 
-"use strict";
+import fs from "node:fs";
+import path from "node:path";
+import https from "node:https";
+import { execFileSync } from "node:child_process";
+import { pipeline } from "node:stream/promises";
+import { fileURLToPath } from "node:url";
 
-const fs = require("node:fs");
-const path = require("node:path");
-const https = require("node:https");
-const { execFileSync } = require("node:child_process");
-const { pipeline } = require("node:stream/promises");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const pkg = require("../package.json");
+const pkg = JSON.parse(
+  fs.readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+);
 const VERSION = process.env.RSPM_VERSION || pkg.version;
 const REPO = "kkzaadev/rspm";
 const BIN_DIR = path.join(__dirname, "..", "bin");
@@ -47,21 +51,25 @@ function downloadUrl(version, platform, arch) {
 function get(url) {
   return new Promise((resolve, reject) => {
     https
-      .get(url, { headers: { "User-Agent": `rspm-installer/${VERSION}` } }, (res) => {
-        if (res.statusCode === 301 || res.statusCode === 302) {
-          resolve(get(res.headers.location));
-          return;
-        }
-        if (res.statusCode !== 200) {
-          reject(
-            new Error(
-              `download failed: ${res.statusCode} ${res.statusMessage} for ${url}`,
-            ),
-          );
-          return;
-        }
-        resolve(res);
-      })
+      .get(
+        url,
+        { headers: { "User-Agent": `rspm-installer/${VERSION}` } },
+        (res) => {
+          if (res.statusCode === 301 || res.statusCode === 302) {
+            resolve(get(res.headers.location));
+            return;
+          }
+          if (res.statusCode !== 200) {
+            reject(
+              new Error(
+                `download failed: ${res.statusCode} ${res.statusMessage} for ${url}`,
+              ),
+            );
+            return;
+          }
+          resolve(res);
+        },
+      )
       .on("error", reject);
   });
 }

@@ -3,13 +3,18 @@
 // Keeps argv1 + signals + exit code straight through so the npm-installed CLI
 // is indistinguishable from a hand-built `cargo install`.
 
-"use strict";
+import path from "node:path";
+import fs from "node:fs";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
-const path = require("node:path");
-const { spawnSync } = require("node:child_process");
-const fs = require("node:fs");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const bin = path.join(__dirname, process.platform === "win32" ? "rspm.exe" : "rspm");
+const bin = path.join(
+  __dirname,
+  process.platform === "win32" ? "rspm.exe" : "rspm",
+);
 if (!fs.existsSync(bin)) {
   console.error(
     "rspm: native binary not found — run `npm rebuild rspm` to fetch it, " +

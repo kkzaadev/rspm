@@ -12,6 +12,7 @@
   "bugs": {
     "url": "https://github.com/kkzaadev/rspm/issues"
   },
+  "type": "module",
   "bin": {
     "rspm": "bin/rspm.js"
   },
