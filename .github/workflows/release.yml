@@ -19,26 +19,12 @@ jobs:
           - target: x86_64-unknown-linux-gnu
             runner: ubuntu-latest
             asset: rspm-linux-x86_64.tar.gz
-          - target: aarch64-unknown-linux-gnu
-            runner: ubuntu-latest
-            asset: rspm-linux-aarch64.tar.gz
-            cross: true
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@v2
-      - name: Install cross toolchain
-        if: matrix.cross
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu
-          mkdir -p .cargo
-          cat <<'EOF' > .cargo/config.toml
-          [target.aarch64-unknown-linux-gnu]
-          linker = "aarch64-linux-gnu-gcc"
-          EOF
       - run: cargo build --release --target ${{ matrix.target }} --bin rspm --bin rspm-daemon
       - name: Package artifact
         run: |
@@ -67,10 +53,35 @@ jobs:
         with:
           path: dist/
           merge-multiple: true
+      - name: Extract CHANGELOG section for this tag
+        id: changelog
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME#v}"
+          NOTES=$(awk -v ver="$TAG" '
+            BEGIN { capture=0 }
+            /^## \[/ {
+              if (capture) exit
+              if ($0 ~ "\\[" ver "\\]") { capture=1; next }
+            }
+            capture { print }
+          ' CHANGELOG.md || true)
+          {
+            echo "notes<<RSPM_EOF"
+            if [ -z "$NOTES" ]; then
+              echo "_(no CHANGELOG entry found for $TAG)_"
+            else
+              echo "$NOTES"
+            fi
+            echo "RSPM_EOF"
+          } >> "$GITHUB_OUTPUT"
       - name: List downloaded assets
         run: ls -la dist/
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*
+          body: ${{ steps.changelog.outputs.notes }}
           generate_release_notes: true
+          make_latest: "true"
+          prerelease: false

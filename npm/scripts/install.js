@@ -29,8 +29,11 @@ function resolveTarget() {
         "macOS / Windows support is on the roadmap — install from source with cargo for now.",
     );
   }
-  if (arch !== "x64" && arch !== "arm64") {
-    throw new Error(`unsupported cpu arch: ${arch}`);
+  if (arch !== "x64") {
+    throw new Error(
+      `unsupported cpu arch: ${arch} (rspm v${VERSION} ships linux-x86_64 only; ` +
+        "linux-aarch64 lands in v0.0.3)",
+    );
   }
   return { platform, arch };
 }
