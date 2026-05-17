@@ -1,0 +1,29 @@
+[package]
+name = "rspm-tests"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+# This crate mirrors `pm2/test/` for behavior-parity coverage. Tests live in
+# `tests/` (Cargo integration tests) and are named after the corresponding PM2
+# Mocha files so reviewers can cross-reference against the JavaScript source.
+
+[dependencies]
+rspm-core = { path = "../crates/rspm-core" }
+rspm-daemon = { path = "../crates/rspm-daemon" }
+rspm-ipc = { path = "../crates/rspm-ipc" }
+rspm-protocol = { path = "../crates/rspm-protocol" }
+rspm-logs = { path = "../crates/rspm-logs" }
+rspm-config = { path = "../crates/rspm-config" }
+nix.workspace = true
+tempfile = "3.14"
+
+[dev-dependencies]
+chrono.workspace = true
+serde_json.workspace = true
+tokio = { workspace = true, features = ["fs", "io-util", "macros", "net", "process", "rt-multi-thread", "signal", "sync", "time"] }
+
+[lints]
+workspace = true
